@@ -12,6 +12,7 @@ import '../widgets/chat_panel.dart';
 import '../widgets/notes_panel.dart';
 import '../widgets/restore_confirmation_dialog.dart';
 import '../services/note_context_service.dart';
+import '../widgets/note_preview_dialog.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -352,6 +353,38 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _previewNotesForAi() async {
+    if (_sending || _restoring) return;
+
+    if (!_conversationLoaded || !_notesLoaded) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('会話とメモの読み込みをお待ちください。')));
+      return;
+    }
+
+    final question = _input.text.trim();
+
+    if (question.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('先に質問を入力してください。')));
+      return;
+    }
+
+    final notesText = _noteContext.buildContext(
+      question: question,
+      notes: _notes,
+    );
+
+    await showDialog<void>(
+      context: context,
+      builder: (_) => NotePreviewDialog(
+        question: question,
+        notesText: notesText,
+        historyMessageCount: _apiHistory.length,
+      ),
+    );
+  }
+
   // ── 会話の送信 ──
 
   Future<void> _send() async {
@@ -387,10 +420,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final answer = await _serverApi.sendMessage(
         messages: requestMessages,
-        notes: _noteContext.buildContext(
-          question: text,
-          notes: _notes,
-        ),
+        notes: _noteContext.buildContext(question: text, notes: _notes),
       );
 
       if (!mounted) return;
@@ -517,6 +547,7 @@ class _HomePageState extends State<HomePage> {
                     sending: _sending,
                     enabled: _conversationLoaded && _notesLoaded && !_restoring,
                     onSend: _send,
+                    onPreviewNotes: _previewNotesForAi,
                   )
                 : NotesPanel(
                     notes: _notes,

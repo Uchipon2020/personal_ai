@@ -11,6 +11,7 @@ class ChatPanel extends StatelessWidget {
     required this.sending,
     required this.enabled,
     required this.onSend,
+    this.onPreviewNotes,
   });
 
   final List<ChatMessage> messages;
@@ -19,6 +20,7 @@ class ChatPanel extends StatelessWidget {
   final bool sending;
   final bool enabled;
   final VoidCallback onSend;
+  final VoidCallback? onPreviewNotes;
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -67,7 +69,13 @@ class ChatPanel extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: enabled && !sending ? onPreviewNotes : null,
+                icon: const Icon(Icons.description_outlined),
+                label: const Text('送信メモを確認'),
+              ),
+              const SizedBox(width: 8),
               FilledButton(
                 onPressed: enabled && !sending ? onSend : null,
                 child: Text(sending ? '回答中…' : '送信'),
